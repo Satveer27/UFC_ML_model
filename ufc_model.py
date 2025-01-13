@@ -1,5 +1,7 @@
+from utils.clean import convert_knockout, convert_stance, convert_to_time, determine_winner, getReach, getWeight, height_to_cm, to_int
 from utils.db_connec import connect_to_database
 import pandas as pd
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputRegressor
@@ -49,87 +51,6 @@ def get_data():
         return all_fighters_pandas, all_fights_pandas, all_fights_details_pandas
     except Exception as e:
         raise(e)
-
-def determine_winner(row):
-    try:
-        fight_winner = row['fight_winner']
-        fighter1_id = row['fighter1_fight_id']
-        if(fight_winner is not None):
-            if(fight_winner == fighter1_id):
-                return 0
-            else:
-                return 1
-        else:
-            return -1
-        
-    except Exception as e:
-        return -1
-
-def height_to_cm(height_str):
-    try:
-        if isinstance(height_str, (int, float)):
-            return float(height_str)
-        
-        feet = height_str.strip("'")[0]
-        feet = int(feet)
-        try:
-            inches = height_str.strip("'")[3]
-            inches = int(inches)
-        except:
-
-            inches = 0
-        
-        total_inches = (feet*12) + inches
-        total_cm = total_inches * 2.54
-        return total_cm
-    except:
-        return 0
-    
-def getWeight(weight_str):
-    try:
-        if(isinstance(weight_str, (int, float))):
-            return weight_str
-        
-        return int(weight_str.split(" lbs.")[0])
-    except Exception as e:
-        print(f'error {e} for {weight_str}')
-        return 0    
-
-def getReach(reach_str):
-    try:
-        if(isinstance(reach_str, (int, float))):
-            return reach_str
-        
-        return int(reach_str.split('"')[0])
-    except Exception as e:
-        print(f'error {e} for {reach_str}')
-        return 0
-    
-def convert_stance(array, column, prefix_name):
-    stance_f1 = pd.get_dummies(array[column], prefix=prefix_name)
-    stance_f1 = stance_f1.astype(int)
-    array = pd.concat([array, stance_f1], axis=1)
-    array.drop(columns=[column], inplace=True)
-    return array
-
-def to_int(value):
-    try:
-        return int(value)  # Attempt to convert to integer
-    except:
-        return 0
-    
-def convert_to_time(value):
-    try:
-        hour = 3600 * value.hour
-        minutes = value.minute * 60
-        total_sec = hour + minutes + value.second
-        return total_sec
-    except:
-        return 0
-    
-def convert_knockout(value):
-    methods_of_knockout = {'U-DEC': 0, 'SUB': 1, 'KO/TKO': 2, 'S-DEC': 3, 'M-DEC': 4, 'DQ': 5}
-    return methods_of_knockout.get(value, -1)
 
 # if u want to see how the model performed you can call this
 def make_predictions(model, testing_sample, actual_result):
@@ -229,3 +150,5 @@ model.fit(X_train, y_train)
 # Remove if you dont want to see how precise model is
 make_predictions(model, X_test, y_test)
 
+#Save model
+joblib.dump(model, 'ufc_model.joblib')
