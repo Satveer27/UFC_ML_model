@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import numpy as np
 import joblib
 from typing import Dict
-from utils.clean import clean_pds, cleaned_for_ml, combine_fighters, present_result
+from utils.clean import clean_pds, cleaned_for_ml, combine_fighters, get_fighter_id, present_result
 from utils.db_connec import connect_to_database
 import requests
 
@@ -26,19 +26,16 @@ def direct_predict(data: Dict):
         return{"error": "Both fighter1 and fighter2 must be provided"}
     
     try:
-        fighter1_data = requests.get(f'http://127.0.0.1:8000/get-id/{fighter1}')
-        fighter2_data = requests.get(f'http://127.0.0.1:8000/get-id/{fighter2}')
+        fighter1_data = get_fighter_id(fighter1)
+        fighter2_data = get_fighter_id(fighter2)
 
-        if fighter1_data.status_code != 200:
-            return {"error": f"Could not fetch data for fighter1: {fighter1_data}"}
+        if fighter1_data == False:
+            return {"error": f"Could not fetch data for fighter1: {fighter1}"}
         
-        if fighter2_data.status_code != 200:
-            return {"error": f"Could not fetch data for fighter1: {fighter2_data}"}
-        
-        fighter1_data_decoded = fighter1_data.json().get('result')
-        fighter2_data_decoded = fighter2_data.json().get('result')
-
-        combined_pd = combine_fighters(fighter1_data_decoded, fighter2_data_decoded)
+        if fighter2_data == False:
+            return {"error": f"Could not fetch data for fighter1: {fighter2}"}
+    
+        combined_pd = combine_fighters(fighter1_data, fighter2_data)
 
         cleaned_pd_for_ml = cleaned_for_ml(combined_pd)
 
@@ -60,30 +57,4 @@ def direct_predict(data: Dict):
     except Exception as e:
         return{"error": f'{e}'}
     
-
-@app.get('/get-id/{fighter_id}')
-def get_fighter_id(fighter_id: str):
-    conn = connect_to_database()
-    sql_query = """
-    SELECT *
-    FROM ufc_fighters
-    WHERE fighter_id = ?
-    """
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(sql_query, fighter_id)
-        fighters_columns = [desc[0] for desc in cursor.description]  
-        all_fighter = cursor.fetchone()
-        if(all_fighter):
-            all_fighter = dict(zip(fighters_columns, all_fighter))
-            return {"result": all_fighter}
-        else:
-            return {"error": "Fighter not found"}, 404
-
-    except Exception as e:
-        return {'error': f'Could not get the fighter data because {e}'}, 500
-
-    finally:
-        conn.close()
     

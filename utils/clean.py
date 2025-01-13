@@ -1,6 +1,8 @@
 import pandas as pd
 from datetime import timedelta
 
+from utils.db_connec import connect_to_database
+
 def combine_fighters(fighter1, fighter2):
     try:
         fighter1_data_pd = pd.DataFrame([fighter1])
@@ -183,12 +185,12 @@ def convert_to_time(value):
         return 0
     
 def convert_knockout(value):
-    methods_of_knockout = {0: 'U-DEC', 1: 'SUB', 2: 'KO/TKO', 3: 'S-DEC', 4: 'M-DEC', 5: 'DQ'}
+    methods_of_knockout = {'U-DEC':0, 'SUB': 1,'KO/TKO': 2, 'S-DEC':3, 'M-DEC': 4,  'DQ':5}
     return methods_of_knockout.get(value, -1)
 
 def present_result(data, fighter1, fighter2):
     final = []
-
+    methods_of_knockout = {0: 'U-DEC', 1: 'SUB', 2: 'KO/TKO', 3: 'S-DEC', 4: 'M-DEC', 5: 'DQ', 6: 'Unknown'}
     if(data[0][0] == 0):
         final.append(fighter1)
     elif(data[0][0] == 1):
@@ -201,8 +203,32 @@ def present_result(data, fighter1, fighter2):
     final.append(fight_time)
     round = data[0][2]
     final.append(round)
-    method = convert_knockout(data[0][3])
+    method = methods_of_knockout.get(data[0][3], 'Unknown')
     final.append(method)
 
     return final
 
+
+def get_fighter_id(fighter_id):
+    conn = connect_to_database()
+    sql_query = """
+    SELECT *
+    FROM ufc_fighters
+    WHERE fighter_id = ?
+    """
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(sql_query, fighter_id)
+        fighters_columns = [desc[0] for desc in cursor.description]  
+        all_fighter = cursor.fetchone()
+        if(all_fighter):
+            all_fighter = dict(zip(fighters_columns, all_fighter))
+            return all_fighter
+        else:
+            return False
+    except Exception as e:
+        return False
+
+    finally:
+        conn.close()
