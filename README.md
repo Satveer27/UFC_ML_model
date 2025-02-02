@@ -6,7 +6,7 @@ This project is a extension of the ETL i created and to run this project you mus
 
 This ML model is deployed in AWS ECS and to use this ml model you can view the link for this repository. The link will take you to the docs and the via the docs you can try and use the model to your own usage. Everytime you want to use the model you can simply call the link using ur desired language
 
-**DO NOTE THE MACHINE LEARNING MODEL IS NOT RUNNING IN ECS AS OF RIGHT NOW DUE TO AWS REQUIRING PAYMENT.**
+**DO NOTE THE MACHINE LEARNING MODEL IS NOT RUNNING IN ECS AS OF RIGHT NOW DUE TO AWS REQUIRING PAYMENT. THEREFORE AS OF RIGHT NOW I DEPLOYED THE MODEL IN RENDER**
 
 
 
